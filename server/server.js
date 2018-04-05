@@ -1,8 +1,7 @@
-
+const _ = require('lodash');
 const {ObjectID} = require('mongodb');
-
-var express = require('express');
-var bodyParser = require('body-parser');
+const express = require('express');
+const bodyParser = require('body-parser');
 
 var {mongoose} = require('./db/mongoose.js');
 var {Todo} = require('./models/todo');
@@ -88,6 +87,35 @@ res.send({todo});
 		// if doc, send 200
 	//error
 		//400 with empty body
+ });
+
+ //lec84 to update use this, also need lodash module,pull off _.pick method takes array of property, if text is exist 
+ app.patch('/todos/:id', (req,res)=>{
+ 	var id = req.params.id;
+ 	var body = _.pick(req.body, ['text','completed']);
+ 	if(!ObjectID.isValid(id)){
+ 		return res.status(404).send();
+ 	}
+ 	//check if the completed property is boolean and its on body
+ 	//getTime() returns js timestamp
+ 	if(_.isBoolean(body.completed) && body.completed){
+ 		body.completedAt = new Date().getTime()
+ 	}else{
+ 		body.completed = false;
+ 		body.completedAt = null;
+ 	}
+ 	//query to update the database with findoneandupdate
+ Todo.findByIdAndUpdate(id,{$set:body}, {new:true}).then((todo)=>{
+if(!todo){
+	return res.status(404).send();
+}
+res.send({todo});
+ }).catch((e)=>{
+ 	res.status(400).send();
+ })
+
+
+
  });
 
 app.listen(port, ()=> {
